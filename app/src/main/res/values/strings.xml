@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Screen Sharing Latest- Agora</string>
+    <string name="channel_id">Show Name / Channel Id</string>
+    <string name="chanel_support_char" translatable="false">qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890 !#$%()+-:;&lt;=.>?@[]^_{}|~,&amp;</string>
+    <string name="join">join</string>
+
+    <string name="agora_app_id" translatable="false">f7f8bfaa5fa641179bffbb6a750a7dd7</string>
+    <string name="agora_access_token" translatable="false">006f7f8bfaa5fa641179bffbb6a750a7dd7IACoGKQcS0BpxtVp2z8sDthtyY7SCfrdkfuQ9U9tIjFc3al2HyVFgfB4IgARxa7BKCNYYgQAAQBw5VZiAgBw5VZiAwBw5VZiBABw5VZi</string>
+    <string name="leave">Leave</string>
+
+
+</resources>
