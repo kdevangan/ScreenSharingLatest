@@ -1,5 +1,6 @@
 package com.ezmall.screensharinglatest_agora
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -15,9 +16,7 @@ import android.widget.Button
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat.PRIORITY_MIN
 import android.view.WindowManager
-
-
-
+import androidx.constraintlayout.widget.ConstraintLayout
 
 
 class FloatingWindowApp : Service()/*,View.OnClickListener  */{
@@ -138,6 +137,7 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
     private var LAYOUT_TYPE:Int?=null
     private lateinit var windowManager: WindowManager
     private lateinit var btnStopCasting:Button
+    private lateinit var cl_transparent:ConstraintLayout
     override fun onBind(p0: Intent?): IBinder? {
         return null
     }
@@ -155,6 +155,12 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
         floatView=inflater.inflate(R.layout.service_layout,null ) as ViewGroup
 
         btnStopCasting=floatView.findViewById(R.id.btn_stop_casting)
+        cl_transparent=floatView.findViewById(R.id.cl_transparent)
+
+        cl_transparent.isClickable=false
+//        cl_transparent.isFocusable=true
+
+        cl_transparent.setOnTouchListener { p0, p1 -> true }
 
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
             LAYOUT_TYPE=WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -164,7 +170,7 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
         }
 
         floatWindowLayoutParams=WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
         LAYOUT_TYPE!!,
             /*WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or*/ WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -182,13 +188,15 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
 
             windowManager.removeView(floatView)
 
-            val back=Intent(this@FloatingWindowApp,MainActivity::class.java)
+//            val back=Intent(this@FloatingWindowApp,MainActivity::class.java)
 //            back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            startActivity(back)
+//            back.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//            startActivity(back)
+            sendBroadcast()
         }
 
-        btnStopCasting.setOnTouchListener(
+
+ /*       btnStopCasting.setOnTouchListener(
             object :View.OnTouchListener{
                 val updatedFloatWindowLayoutParams=floatWindowLayoutParams
                 var x=0.0;
@@ -215,13 +223,41 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
                 }
 
             }  )
+        cl_transparent.setOnTouchListener(
+            object :View.OnTouchListener{
+                val updatedFloatWindowLayoutParams=floatWindowLayoutParams
+                var x=0.0;
+                var y=0.0;
+                var px=0.0;
+                var py=0.0;
+                override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+                    when(event?.action){
+                        MotionEvent.ACTION_DOWN -> {
+                            x=updatedFloatWindowLayoutParams.x.toDouble()
+                            y=updatedFloatWindowLayoutParams.y.toDouble()
 
-/*        floatView.setOnTouchListener(object :View.OnTouchListener{
+                            px=event.rawX.toDouble()
+                            py=event.rawY.toDouble()
+                        }
+                        MotionEvent.ACTION_MOVE->{
+                            updatedFloatWindowLayoutParams.x=(x+event.rawX-px).toInt()
+                            updatedFloatWindowLayoutParams.y=(y+event.rawY-py).toInt()
+
+                            windowManager.updateViewLayout(floatView,updatedFloatWindowLayoutParams)
+                        }
+                    }
+                    return false;
+                }
+
+            }  )*/
+
+        floatView.setOnTouchListener(object :View.OnTouchListener{
             val updatedFloatWindowLayoutParams=floatWindowLayoutParams
             var x=0.0;
             var y=0.0;
             var px=0.0;
             var py=0.0;
+            @SuppressLint("ClickableViewAccessibility")
             override fun onTouch(view: View?, event: MotionEvent?): Boolean {
                 when(event?.action){
                     MotionEvent.ACTION_DOWN -> {
@@ -241,7 +277,7 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
                 return false;
             }
 
-        })*/
+        })
 
     }
 
@@ -253,6 +289,12 @@ class FloatingWindowApp : Service()/*,View.OnClickListener  */{
         super.onDestroy()
         stopSelf()
         windowManager.removeView(floatView)
+    }
+
+    fun sendBroadcast() {
+        val broadcast = Intent()
+        broadcast.action = "BROADCAST_ACTION"
+        sendBroadcast(broadcast)
     }
     }
 

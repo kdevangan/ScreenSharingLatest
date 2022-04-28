@@ -31,6 +31,10 @@ import io.agora.rtc.models.ChannelMediaOptions
 import io.agora.rtc.video.VideoCanvas
 import java.lang.Exception
 import kotlin.math.abs
+import android.widget.Toast
+
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val TAG: String = "MainActivity"
@@ -42,8 +46,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private var engine: RtcEngine? = null
     private var myUid = 0
     private var joined = false
-
     private lateinit var dialog: AlertDialog;
+
+    private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            Toast.makeText(applicationContext, "received", Toast.LENGTH_SHORT).show()
+            findViewById<View>(R.id.btn_join).performClick()
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,7 +70,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         findViewById<View>(R.id.btn_join).setOnClickListener(this)
         fl_remote = findViewById<FrameLayout>(R.id.fl_remote)
         createRTCEngine()
-
+        registerReceiver()
 
 
     }
@@ -73,13 +85,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
             if( checkOverlayPermission()){
                 startService(Intent(this@MainActivity,FloatingWindowApp::class.java))
-                finish()
+//                finish()
             }
             else{
                 requestFloatingWindowPermission()
             }
 
-            startService(Intent(this,FloatingWindowApp::class.java))
+//            startService(Intent(this,FloatingWindowApp::class.java))
 
             if (!joined) {
                 et_channel?.let { CommonUtil.hideInputBoard(this, it) }
@@ -159,12 +171,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         // Enable video module
         engine?.enableVideo()
 
-        val screenCaptureParameters = ScreenCaptureParameters()
-        screenCaptureParameters.captureAudio = true
-        screenCaptureParameters.captureVideo = true
-        val videoCaptureParameters = ScreenCaptureParameters.VideoCaptureParameters()
-        screenCaptureParameters.videoCaptureParameters = videoCaptureParameters
-        engine?.startScreenCapture(screenCaptureParameters)
+
+        engine?.startScreenCapture(getScreenCaptureParameters())
+
         description?.text = "Screen Sharing Starting"
         /**Please configure accessToken in the string_config file.
          * A temporary token generated in Console. A temporary token is valid for 24 hours. For details, see
@@ -479,6 +488,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
         handler!!.post { RtcEngine.destroy() }
         engine = null
+
+        unregisterReceiver(receiver)
     }
 
     private fun isSerivceRunning():Boolean{
@@ -514,4 +525,20 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
         else  return true
     }
+
+
+    private fun registerReceiver (){
+        val filter = IntentFilter()
+        filter.addAction("BROADCAST_ACTION")
+        registerReceiver(receiver, filter)
+    }
+
+private fun getScreenCaptureParameters():ScreenCaptureParameters{
+    val screenCaptureParameters = ScreenCaptureParameters()
+    screenCaptureParameters.captureAudio = true
+    screenCaptureParameters.captureVideo = true
+    val videoCaptureParameters = ScreenCaptureParameters.VideoCaptureParameters()
+    screenCaptureParameters.videoCaptureParameters = videoCaptureParameters
+    return screenCaptureParameters
+}
 }
