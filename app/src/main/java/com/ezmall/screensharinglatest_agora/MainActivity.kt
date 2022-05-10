@@ -35,6 +35,13 @@ import android.widget.Toast
 
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
+import android.view.WindowManager
+import com.ezmall.screensharinglatest_agora.custom_screen_capture.GLRender
+import com.ezmall.screensharinglatest_agora.custom_screen_capture.ImgTexFrame
+import com.ezmall.screensharinglatest_agora.custom_screen_capture.SinkConnector
+import com.ezmall.screensharinglatest_agora.custom_screen_capture.capture.ScreenCapture
+import io.agora.rtc.video.AgoraVideoFrame
+import java.lang.IllegalArgumentException
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val TAG: String = "MainActivity"
@@ -47,6 +54,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private var myUid = 0
     private var joined = false
     private lateinit var dialog: AlertDialog;
+
+    private val mIsLandSpace = false
+    private var mScreenCapture: ScreenCapture? = null
+    private var mScreenGLRender: GLRender? = null
+    private var btnShareScreen:Button?=null
 
     private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -72,6 +84,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         createRTCEngine()
         registerReceiver()
 
+        btnShareScreen=findViewById(R.id.shareScreen)
+        btnShareScreen?.setOnClickListener {
+            btnShareScreen?.isSelected = it.isSelected
+            btnShareScreen?.isSelected = !(btnShareScreen?.isSelected)!!
+            if (it.isSelected) {
+                startCapture()
+            } else {
+                stopCapture()
+            }
+        }
 
     }
 
@@ -79,7 +101,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
         if (v?.id == R.id.btn_join) {
 
-            if (isSerivceRunning()){
+/*            if (isSerivceRunning()){
                 stopService(Intent(this@MainActivity,FloatingWindowApp::class.java))
             }
 
@@ -89,9 +111,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
             else{
                 requestFloatingWindowPermission()
-            }
+            }*/
 
-//            startService(Intent(this,FloatingWindowApp::class.java))
 
             if (!joined) {
                 et_channel?.let { CommonUtil.hideInputBoard(this, it) }
@@ -172,7 +193,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         engine?.enableVideo()
 
 
-        engine?.startScreenCapture(getScreenCaptureParameters())
+//        engine?.startScreenCapture(getScreenCaptureParameters())
+        setUpCustomListner()
+
 
         description?.text = "Screen Sharing Starting"
         /**Please configure accessToken in the string_config file.
@@ -193,7 +216,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val option = ChannelMediaOptions()
         option.autoSubscribeAudio = true
         option.autoSubscribeVideo = true
-        val res = engine?.joinChannel(accessToken, channelId, "Extra Optional Data", 1263, option)
+        val res = engine?.joinChannel(accessToken, channelId, "Extra Optional Data", 2, option)
         if (res != 0) {
             // Usually happens with invalid parameters
             // Error code description can be found at:
@@ -206,6 +229,78 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
         // Prevent repeated entry
         join?.isEnabled = false
+    }
+
+    private fun setUpCustomListner() {
+        if (mScreenGLRender == null) {
+            mScreenGLRender = GLRender()
+        }
+        if (mScreenCapture == null) {
+            mScreenCapture = ScreenCapture(applicationContext, mScreenGLRender, getResources().getDisplayMetrics().densityDpi)
+        }
+
+        mScreenCapture!!.mImgTexSrcConnector.connect(object : SinkConnector<ImgTexFrame?>() {
+            override fun onFormatChanged(obj: Any) {
+                Log.d(TAG,
+                    "onFormatChanged $obj"
+                )
+            }
+            override fun onFrameAvailable(frame: ImgTexFrame?) {
+                Log.d(
+                    TAG,
+                    "onFrameAvailable " + frame.toString()
+                )
+                if ( engine== null) {
+                    return
+                }
+                val vf = AgoraVideoFrame()
+                vf.format = AgoraVideoFrame.FORMAT_TEXTURE_OES
+                vf.timeStamp = frame?.pts!!
+                vf.stride = frame.mFormat?.mWidth!!
+                vf.height = frame.mFormat?.mHeight!!
+                vf.textureID = frame.mTextureId
+                vf.syncMode = true
+                vf.eglContext14 = mScreenGLRender!!.eglContext
+                vf.transform = frame.mTexMatrix
+                engine?.pushExternalVideoFrame(vf)            }
+        })
+
+        mScreenCapture!!.setOnScreenCaptureListener(object : ScreenCapture.OnScreenCaptureListener {
+            override fun onStarted() {
+                Log.d(
+                   TAG,
+                    "Screen Record Started"
+                )
+            }
+
+            override fun onError(err: Int) {
+                Log.d(TAG,
+                    "onError $err"
+                )
+                when (err) {
+                    ScreenCapture.SCREEN_ERROR_SYSTEM_UNSUPPORTED -> Log.d(
+                        TAG,
+                        "onError " + "SCREEN_ERROR_SYSTEM_UNSUPPORTED"
+                    )
+                    ScreenCapture.SCREEN_ERROR_PERMISSION_DENIED -> Log.d(TAG,
+                        "onError " + "SCREEN_ERROR_PERMISSION_DENIED"
+                    )
+                }
+            }
+        })
+
+        val wm = applicationContext
+            .getSystemService(WINDOW_SERVICE) as WindowManager
+        var screenWidth = wm.defaultDisplay.width
+        var screenHeight = wm.defaultDisplay.height
+        if (mIsLandSpace && screenWidth < screenHeight ||
+            !mIsLandSpace && screenWidth > screenHeight
+        ) {
+            screenWidth = wm.defaultDisplay.height
+            screenHeight = wm.defaultDisplay.width
+        }
+
+        setOffscreenPreview(screenWidth, screenHeight)
     }
 
     private fun showAlert(message: String?) {
@@ -541,4 +636,19 @@ private fun getScreenCaptureParameters():ScreenCaptureParameters{
     screenCaptureParameters.videoCaptureParameters = videoCaptureParameters
     return screenCaptureParameters
 }
+
+    @Throws(IllegalArgumentException::class)
+    fun setOffscreenPreview(width: Int, height: Int) {
+        require(!(width <= 0 || height <= 0)) { "Invalid offscreen resolution" }
+        mScreenGLRender!!.init(width, height)
+    }
+
+
+    private fun startCapture() {
+        mScreenCapture?.start()
+    }
+
+    private fun stopCapture() {
+        mScreenCapture?.stop()
+    }
 }

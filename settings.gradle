@@ -8,5 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Screen Sharing Latest- Agora"
 include ':app'
-include ':lib-screensharing'
-include ':lib-component'
+

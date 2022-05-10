@@ -17,9 +17,9 @@
         <FrameLayout
             android:id="@+id/fl_local"
             android:layout_width="0dp"
-            android:background="@color/purple_200"
+            android:layout_height="match_parent"
             android:layout_weight="0.34"
-            android:layout_height="match_parent">
+            android:background="@color/purple_200">
 
             <TextView
                 android:id="@+id/description"
@@ -35,13 +35,14 @@
         <FrameLayout
             android:id="@+id/fl_remote"
             android:layout_width="0dp"
-            android:layout_weight="0.34"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_weight="0.34">
+
             <FrameLayout
                 android:id="@+id/fl_remote_video"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                />
+                android:layout_height="match_parent" />
+
             <TextView
                 android:id="@+id/remote_stats"
                 android:layout_width="match_parent"
@@ -51,6 +52,12 @@
                 android:maxLines="9"
                 android:text="Remote Video Stats"
                 android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/shareScreen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="share screen" />
         </FrameLayout>
 
     </LinearLayout>
@@ -68,8 +75,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="@string/channel_id"
-            android:digits="@string/chanel_support_char"/>
+            android:digits="@string/chanel_support_char"
+            android:text="@string/channel_id" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_join"

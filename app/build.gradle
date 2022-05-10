@@ -13,7 +13,7 @@ android {
         }*/
         applicationId "com.ezmall.screensharinglatest_agora"
         minSdk 21
-        targetSdkVersion 31
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
@@ -36,7 +36,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar","*.aar"])
+//    implementation fileTree(dir: "libs", include: ["*.jar","*.aar"])
 //    implementation project(path: ':lib-screensharing')
 
 //    implementation 'androidx.core:core-ktx:1.7.0'
